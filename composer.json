@@ -1,0 +1,22 @@
+{
+    "name": "sofa/laravel-kahlan",
+    "description": "Kahlan specs suite for Laravel application testing",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jarek Tkaczyk",
+            "email": "jarek@softonsofa.com"
+        }
+    ],
+    "require": {
+        "laravel/framework": "5.1.*|5.0.*",
+        "crysalead/kahlan": "^2.5",
+        "phpunit/phpunit" : "~4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sofa\\LaravelKahlan\\": "src"
+        }
+    },
+    "minimum-stability": "stable"
+}
