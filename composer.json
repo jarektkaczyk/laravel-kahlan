@@ -1,6 +1,7 @@
 {
     "name": "sofa/laravel-kahlan",
-    "description": "Kahlan specs suite for Laravel application testing",
+    "description": "Kahlan specs suite for testing Laravel applications",
+    "keywords": ["laravel", "testing", "bdd", "kahlan", "spec", "tdd"],
     "license": "MIT",
     "authors": [
         {
@@ -9,7 +10,7 @@
         }
     ],
     "require": {
-        "laravel/framework": "5.1.*|5.0.*",
+        "laravel/framework": "5.1.*",
         "crysalead/kahlan": "^2.5",
         "phpunit/phpunit" : "~4.0"
     },
