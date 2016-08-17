@@ -3,15 +3,11 @@
 namespace Sofa\LaravelKahlan;
 
 use Dotenv;
-use Kahlan\Given;
 use Kahlan\Suite;
 use Kahlan\Cli\Kahlan;
 use Kahlan\Plugin\Stub;
 use Kahlan\Filter\Filter;
 use Illuminate\Support\Str;
-use Illuminate\Container\Container;
-use Illuminate\Foundation\Testing\CrawlerTrait;
-use Illuminate\Foundation\Testing\AssertionsTrait;
 
 class Env
 {
