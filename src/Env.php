@@ -6,8 +6,10 @@ use Dotenv;
 use Kahlan\Given;
 use Kahlan\Suite;
 use Kahlan\Cli\Kahlan;
+use Kahlan\Plugin\Stub;
 use Kahlan\Filter\Filter;
 use Illuminate\Support\Str;
+use Illuminate\Container\Container;
 use Illuminate\Foundation\Testing\CrawlerTrait;
 use Illuminate\Foundation\Testing\AssertionsTrait;
 
@@ -82,37 +84,23 @@ class Env
         return $app;
     }
 
-    public function startApplication()
-    {
-        return function () {
-            $app = $this->bootstrapLaravel();
-
-            given('app', function () use ($app) {
-                return $app;
-            });
-
-            given('crawler', function () use ($app) {
-                $crawler = new Crawler;
-                $crawler->baseUrl = env('BASE_URL', 'localhost');
-                $crawler->app = $app;
-                return $crawler;
-            });
-
-            given('laravel', function () {
-                return $this->crawler;
-            });
-        };
-    }
-
     public function refreshApplication()
     {
         return function () {
-            $app = $this->bootstrapLaravel();
+            $laravel = new Crawler;
+            $laravel->baseUrl = env('BASE_URL', 'localhost');
+            $laravel->app = $this->bootstrapLaravel();
 
-            given('app', function () use ($app) {
-                return $app;
-            });
+            $context = Suite::current();
+            $context->app = $laravel->app;
+            $context->laravel = $laravel;
+            $context->crawler = $laravel;
         };
+    }
+
+    public function startApplication()
+    {
+        return $this->refreshApplication();
     }
 
     /**
@@ -123,7 +111,7 @@ class Env
      * @param  \Closure $closure
      * @return \Kahlan\Suite
      */
-    public static function wrap($wrappers, $closure)
+    public static function wrap($wrappers, $closure, $mode = 'normal')
     {
         $befores = $afters = [];
 
@@ -135,7 +123,8 @@ class Env
             if ($after) $afters[] = $after;
         }
 
-        $context = Suite::current()->context('Following specs run using: ' . implode(', ', $wrappers) . ' ⤵', $closure);
+        $message = 'Following specs run using: ' . implode(', ', $wrappers) . ' ⤵';
+        $context = Suite::current()->context($message, $closure, null, $mode);
 
         foreach ($befores as $callback) {
             $context->beforeEach($callback);
@@ -162,8 +151,8 @@ class Env
         switch (Str::plural(Str::studly(str_replace('.', ' ', $wrapper)))) {
             case self::DATABASE_TRANSACTIONS:
                 return [
-                    function () {app('db')->beginTransaction();},
-                    function () {app('db')->rollBack();},
+                    function () {Suite::current()->laravel->make('db')->beginTransaction();},
+                    function () {Suite::current()->laravel->make('db')->rollBack();},
                 ];
 
             case self::DATABASE_MIGRATIONS:
@@ -179,7 +168,13 @@ class Env
                 ];
 
             case self::WITHOUT_EVENTS:
-                // to be implemented
+                return [
+                    function () {
+                        $mock = Stub::create(['implements' => ['Illuminate\Contracts\Events\Dispatcher']]);
+                        Suite::current()->laravel->app->instance('events', $mock);
+                    },
+                    null
+                ];
 
         }
 

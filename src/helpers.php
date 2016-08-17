@@ -1,5 +1,6 @@
 <?php
 
+use Kahlan\Suite;
 use Sofa\LaravelKahlan\Env;
 
 /*
@@ -33,3 +34,21 @@ function using($wrappers, $closure)
 {
     return wrapEach($wrappers, $closure);
 }
+
+/** Kahlan focus mode */
+function fwrapEach($in, $closure)
+{
+    return Env::wrap($in, $closure, 'focus');
+}
+
+/** Kahlan focus mode */
+function fusing($wrappers, $closure)
+{
+    return fwrapEach($wrappers, $closure);
+}
+
+/** Kahlan ignore mode */
+function xwrapEach() {}
+
+/** Kahlan ignore mode */
+function xusing() {}
