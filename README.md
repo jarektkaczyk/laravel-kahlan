@@ -20,7 +20,7 @@ Take a look at [the example spec](https://github.com/jarektkaczyk/kahlan-driven-
     /*  /path/to/your/app/kahlan-config.php  */
     <?php
 
-    Sofa\LaravelKahlan\Env::bootstrap();
+    Sofa\LaravelKahlan\Env::bootstrap($this);
 
     ```
      

@@ -2,8 +2,8 @@
 
 namespace Sofa\LaravelKahlan;
 
-use Dotenv;
 use Kahlan\Suite;
+use Dotenv\Dotenv;
 use Kahlan\Cli\Kahlan;
 use Kahlan\Plugin\Stub;
 use Kahlan\Filter\Filter;
@@ -16,7 +16,7 @@ use InvalidArgumentException;
  * USAGE:
  *
  * 1. Create `kahlan-config.php` file in your app root folder (if not exists already)
- * 2. Add `Sofa\LaravelKahlan\Env::bootstrap();` to kahlan-config.php
+ * 2. Add `Sofa\LaravelKahlan\Env::bootstrap($this);` to kahlan-config.php
  * 3. Create your first spec in /spec folder, eg. /spec/AppSpec.php
  *    Example spec can be found here:
  *    @link https://github.com/jarektkaczyk/kahlan-driven-laravel
@@ -247,10 +247,10 @@ class Env
      */
     public function loadEnvFromFile($filename)
     {
+        putenv('BASE_URL=http://localhost');
+
         if (is_readable($filename) && is_file($filename)) {
-            Dotenv::load(self::$base_path, '.env.kahlan');
-        } else {
-            putenv('BASE_URL=http://localhost');
+            (new Dotenv(self::$base_path, $filename))->load();
         }
     }
 
