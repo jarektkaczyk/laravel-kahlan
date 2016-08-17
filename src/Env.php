@@ -58,6 +58,7 @@ class Env
             ) {
                 $kahlan->suite()->before($env->startApplication());
                 $kahlan->suite()->beforeEach($env->refreshApplication());
+                $kahlan->suite()->afterEach($env->beforeLaravelDestroyed());
             }
             return $chain->next();
         });
@@ -83,20 +84,26 @@ class Env
     public function refreshApplication()
     {
         return function () {
-            $laravel = new Crawler;
+            $laravel = new Laravel;
             $laravel->baseUrl = env('BASE_URL', 'localhost');
             $laravel->app = $this->bootstrapLaravel();
 
             $context = Suite::current();
             $context->app = $laravel->app;
             $context->laravel = $laravel;
-            $context->crawler = $laravel;
         };
     }
 
     public function startApplication()
     {
         return $this->refreshApplication();
+    }
+
+    public function beforeLaravelDestroyed()
+    {
+        return function () {
+            Suite::current()->laravel->afterEach();
+        };
     }
 
     /**
