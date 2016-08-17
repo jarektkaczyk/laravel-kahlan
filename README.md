@@ -12,7 +12,7 @@ Take a look at [the example spec](https://github.com/jarektkaczyk/kahlan-driven-
 
 1. Add to your project
     ```
-    composer require --dev sofa/laravel-kahlan:"~5.2"
+    composer require --dev sofa/laravel-kahlan:"~5.3"
     ```
 
 2. Add this line to your kahlan config file (create it if necessary):
