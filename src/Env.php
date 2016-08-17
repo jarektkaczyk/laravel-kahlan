@@ -97,6 +97,10 @@ class Env
                 $crawler->app = $app;
                 return $crawler;
             });
+
+            given('laravel', function () {
+                return $this->crawler;
+            });
         };
     }
 
@@ -169,7 +173,10 @@ class Env
                 ];
 
             case self::WITHOUT_MIDDLEWARE:
-                // to be implemented
+                return [
+                    function () {Suite::current()->laravel->instance('middleware.disable', true);},
+                    null
+                ];
 
             case self::WITHOUT_EVENTS:
                 // to be implemented
