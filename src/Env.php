@@ -8,15 +8,43 @@ use Kahlan\Cli\Kahlan;
 use Kahlan\Plugin\Stub;
 use Kahlan\Filter\Filter;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
+/**
+ * This class provides Laravel environment for the Kahlan BDD test suite.
+ *
+ * USAGE:
+ *
+ * 1. Create `kahlan-config.php` file in your app root folder (if not exists already)
+ * 2. Add `Sofa\LaravelKahlan\Env::bootstrap();` to kahlan-config.php
+ * 3. Create your first spec in /spec folder, eg. /spec/AppSpec.php
+ *    Example spec can be found here:
+ *    @link https://github.com/jarektkaczyk/kahlan-driven-laravel
+ *
+ * 4. Should you need to customize .env variables for the test suite, you can do it:
+ *     4.1. In the `.env.kahlan` file for persistent env variables
+ *     4.2. At runtime: `/app_path/$ vendor/bin/kahlan -env=DB_CONNECTION=sqlite,MAIL_DRIVER=log`
+ *
+ * 5. You can use all of the kahlan features in your specs as well as the Laravel sugar:
+ *     5.1. All the helpers: app(), event() etc
+ *     5.2. Application methods `$this->app->method()` or `$this->laravel->method()`
+ *     5.4. Laravel TestCase features as `$this->laravel->get('/')->assertResponseOk()`
+ *     5.5. Application instance as either of: `$this->app === $this->laravel->app === app()`
+ *
+ *
+ * Happy coding!
+ */
 class Env
 {
+    /** @var string Application root folder */
     private static $base_path;
+
+    /** @var \Sofa\LaravelKahlan\Env Singleton instance */
     private static $instance;
 
     /*
     |--------------------------------------------------------------------------
-    | Wrappers that provide functionality analogical to Laravel testing traits.
+    | Wrappers that provide functionality of the Laravel testing traits.
     |--------------------------------------------------------------------------
     */
     const DATABASE_TRANSACTIONS = 'DatabaseTransactions';
@@ -24,6 +52,13 @@ class Env
     const WITHOUT_MIDDLEWARE    = 'WithoutMiddlewares';
     const WITHOUT_EVENTS        = 'WithoutEvents';
 
+    /**
+     * Start the engine and get the wheels turning.
+     *
+     * @param  \Kahlan\Cli\Kahlan $kahlan
+     * @param  string $base_path
+     * @return void
+     */
     public static function bootstrap(Kahlan $kahlan, $base_path = null)
     {
         self::$base_path = $base_path ?: realpath(__DIR__.'/../../../../');
@@ -41,6 +76,7 @@ class Env
         Filter::register('laravel.env', function ($chain) use ($args, $env) {
             $env->loadEnvFromFile('.env.kahlan');
             $env->loadEnvFromCli($args);
+
             return $chain->next();
         });
 
@@ -56,10 +92,11 @@ class Env
             if ($args->exists('no-laravel') && !$args->get('no-laravel')
                 || !$args->exists('no-laravel') && !env('NO_LARAVEL')
             ) {
-                $kahlan->suite()->before($env->startApplication());
+                $kahlan->suite()->before($env->refreshApplication());
                 $kahlan->suite()->beforeEach($env->refreshApplication());
                 $kahlan->suite()->afterEach($env->beforeLaravelDestroyed());
             }
+
             return $chain->next();
         });
 
@@ -74,13 +111,11 @@ class Env
         Filter::apply($kahlan, 'interceptor', 'laravel.start');
     }
 
-    public function bootstrapLaravel()
-    {
-        $app = require self::$base_path.'/bootstrap/app.php';
-        $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
-        return $app;
-    }
-
+    /**
+     * Provide fresh application instance for each single spec.
+     *
+     * @return \Closure
+     */
     public function refreshApplication()
     {
         return function () {
@@ -94,11 +129,23 @@ class Env
         };
     }
 
-    public function startApplication()
+    /**
+     * Bootstrap laravel application.
+     *
+     * @return \Illuminate\Foundation\Application
+     */
+    protected function bootstrapLaravel()
     {
-        return $this->refreshApplication();
+        $app = require self::$base_path.'/bootstrap/app.php';
+        $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
+        return $app;
     }
 
+    /**
+     * Run Laravel-specific callbacks after each spec.
+     *
+     * @return void
+     */
     public function beforeLaravelDestroyed()
     {
         return function () {
@@ -140,48 +187,56 @@ class Env
         return $context;
     }
 
+    /**
+     * Get before & after callbacks for given wrapper.
+     *
+     * @param  string $wrapper
+     * @return array
+     * @throws \InvalidArgumentException
+     */
     protected function functionsFor($wrapper)
     {
-        // We're gonna mutate provided wrapper in order to make it flexible
-        // on the developer's part, but standardized in the code below.
-        //
-        // It allows developer to provide any of the following to use DatabaseTransactions:
-        //  - 'database.transactions' // dot notation
-        //  - 'DatabaseTransactions'  // original, laravel trait name
-        //  - 'database transactions' // simple human-readable string
-        //  - 'database transaction'  // any of the above in SINGULAR
-        //
+        /*
+        |--------------------------------------------------------------------------
+        | We're gonna mutate provided wrapper in order to make it flexible
+        | on the developer's part, but standardized in the code below.
+        |
+        | It allows developer to provide any of the following to use DatabaseTransactions:
+        |  - 'database.transactions' // dot notation
+        |  - 'DatabaseTransactions'  // original, laravel trait name
+        |  - 'database transactions' // simple human-readable string
+        |  - 'database transaction'  // any of the above in SINGULAR
+        |--------------------------------------------------------------------------
+        */
         switch (Str::plural(Str::studly(str_replace('.', ' ', $wrapper)))) {
             case self::DATABASE_TRANSACTIONS:
-                return [
-                    function () {Suite::current()->laravel->make('db')->beginTransaction();},
-                    function () {Suite::current()->laravel->make('db')->rollBack();},
-                ];
+                $before = function () {Suite::current()->laravel->make('db')->beginTransaction();};
+                $after = function () {Suite::current()->laravel->make('db')->rollBack();};
+                break;
 
             case self::DATABASE_MIGRATIONS:
-                return [
-                    function () {app('Illuminate\Contracts\Console\Kernel')->call('migrate');},
-                    function () {app('Illuminate\Contracts\Console\Kernel')->call('migrate:rollback');},
-                ];
+                $before = function () {Suite::current()->laravel->artisan('migrate');};
+                $after = function () {Suite::current()->laravel->artisan('migrate:rollback');};
+                break;
 
             case self::WITHOUT_MIDDLEWARE:
-                return [
-                    function () {Suite::current()->laravel->instance('middleware.disable', true);},
-                    null
-                ];
+                $before = function () {Suite::current()->laravel->instance('middleware.disable', true);};
+                $after = null;
+                break;
 
             case self::WITHOUT_EVENTS:
-                return [
-                    function () {
-                        $mock = Stub::create(['implements' => ['Illuminate\Contracts\Events\Dispatcher']]);
-                        Suite::current()->laravel->app->instance('events', $mock);
-                    },
-                    null
-                ];
+                $before = function () {
+                            $mock = Stub::create(['implements' => ['Illuminate\Contracts\Events\Dispatcher']]);
+                            Suite::current()->laravel->app->instance('events', $mock);
+                        };
+                $after = null;
+                break;
 
+            default:
+                throw new InvalidArgumentException(sprintf('Unknown wrapper [%s]', $wrapper));
         }
 
-        return [null, null];
+        return [$before, $after];
     }
 
     /**
@@ -211,7 +266,7 @@ class Env
 
         foreach ($args->get('env') as $key => $val) {
             foreach (explode(',', $val) as $arg) {
-                list($k, $v) = explode(':', $arg);
+                list($k, $v) = preg_split('/:|=/', $arg);
                 $env[$k] = $v;
             }
         }
