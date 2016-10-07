@@ -68,14 +68,16 @@ class Env
         | Prepare environment variables
         |--------------------------------------------------------------------------
         */
-        $env = self::$instance = new self;
-        $args = $kahlan->args();
-        $args->argument('env', ['array' => true]);
-        $args->argument('no-laravel', ['type' => 'boolean']);
 
-        Filter::register('laravel.env', function ($chain) use ($args, $env) {
+        $env = self::$instance = new self;
+        $commandLine = $kahlan->commandLine();
+
+        $commandLine->option('env', ['array' => true]);
+        $commandLine->option('no-laravel', ['type' => 'boolean']);
+
+        Filter::register('laravel.env', function ($chain) use ($commandLine, $env) {
             $env->loadEnvFromFile('.env.kahlan');
-            $env->loadEnvFromCli($args);
+            $env->loadEnvFromCli($commandLine);
 
             return $chain->next();
         });
@@ -85,14 +87,14 @@ class Env
         | Create Laravel context for specs
         |--------------------------------------------------------------------------
         */
-        Filter::register('laravel.start', function ($chain) use ($args, $env, $kahlan) {
+        Filter::register('laravel.start', function ($chain) use ($commandLine, $env, $kahlan) {
             // Due to the fact that Laravel is refreshed for each single spec,
             // it has huge impact on performance, that's why we will allow
             // disabling laravel at runtime for specs not relying on it.
-            if ($args->exists('no-laravel') && !$args->get('no-laravel')
-                || !$args->exists('no-laravel') && !env('NO_LARAVEL')
+            if ($commandLine->exists('no-laravel') && !$commandLine->get('no-laravel')
+                || !$commandLine->exists('no-laravel') && !env('NO_LARAVEL')
             ) {
-                $kahlan->suite()->before($env->refreshApplication());
+                $kahlan->suite()->beforeAll($env->refreshApplication());
                 $kahlan->suite()->beforeEach($env->refreshApplication());
                 $kahlan->suite()->afterEach($env->beforeLaravelDestroyed());
             }
@@ -257,14 +259,14 @@ class Env
     /**
      * Load environment variables provided in CLI at runtime.
      *
-     * @param  \Kahlan\Cli\Args $args
+     * @param  \Kahlan\Cli\CommandLine $commandLine
      * @return void
      */
-    public function loadEnvFromCli($args)
+    public function loadEnvFromCli($commandLine)
     {
         $env = ['APP_ENV' => 'testing'];
 
-        foreach ($args->get('env') as $key => $val) {
+        foreach ($commandLine->get('env') as $key => $val) {
             foreach (explode(',', $val) as $arg) {
                 list($k, $v) = preg_split('/:|=/', $arg);
                 $env[$k] = $v;
