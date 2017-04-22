@@ -34,7 +34,7 @@ Take a look at [the example spec](https://github.com/jarektkaczyk/kahlan-driven-
     describe('My awesome Kahlan driven Laravel app', function () {
         it("provides the same testing API as Laravel's own TestCase", function () {
             $this->laravel->get('/')
-                          ->see('Laravel 5')
+                          ->assertSee('Laravel 5')
                           ->assertResponseOk();
         });
     }
