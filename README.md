@@ -35,7 +35,7 @@ Take a look at [the example spec](https://github.com/jarektkaczyk/kahlan-driven-
         it("provides the same testing API as Laravel's own TestCase", function () {
             $this->laravel->get('/')
                           ->assertSee('Laravel 5')
-                          ->assertResponseOk();
+                          ->assertStatus(200);
         });
     }
 
