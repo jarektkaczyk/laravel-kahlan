@@ -213,7 +213,10 @@ class Env
         switch (Str::plural(Str::studly(str_replace('.', ' ', $wrapper)))) {
             case self::DATABASE_TRANSACTIONS:
                 $before = function () {Suite::current()->laravel->make('db')->beginTransaction();};
-                $after = function () {Suite::current()->laravel->make('db')->rollBack();};
+                $after = function () {
+                    Suite::current()->laravel->make('db')->rollBack();
+                    Suite::current()->laravel->make('db')->disconnect();
+                };
                 break;
 
             case self::DATABASE_MIGRATIONS:
