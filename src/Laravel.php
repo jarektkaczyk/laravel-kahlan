@@ -2,7 +2,8 @@
 
 namespace Sofa\LaravelKahlan;
 
-use PHPUnit_Framework_TestCase;
+//use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use Illuminate\Foundation\Testing\Concerns;
 
 /**
