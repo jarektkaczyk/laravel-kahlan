@@ -13,7 +13,7 @@
         "php": ">=7.0",
         "laravel/framework": "5.5.*",
         "kahlan/kahlan": "^3.0",
-        "phpunit/phpunit" : "~5.0"
+        "phpunit/phpunit" : "~6.5"
     },
     "autoload": {
         "psr-4": {
