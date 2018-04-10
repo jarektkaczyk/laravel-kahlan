@@ -2,13 +2,13 @@
 
 namespace Sofa\LaravelKahlan;
 
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use Illuminate\Foundation\Testing\Concerns;
 
 /**
  * This class is a wrapper for the Laravel's built-in testing features.
  */
-class Laravel extends PHPUnit_Framework_TestCase
+class Laravel extends TestCase
 {
     use Concerns\InteractsWithContainer,
         Concerns\MakesHttpRequests,
