@@ -2,8 +2,6 @@
 
 [Kahlan](https://kahlan.readthedocs.io) suite for testing Laravel application providing intuitive kahlan (jasmine based) describe-it syntax with Laravel functional testing goodies.
 
-**If I'm saving you some time with my work, you can back me up on [Patreon page](https://patreon.com/jarektkaczyk).**
-
 See usage example on https://github.com/jarektkaczyk/kahlan-driven-laravel
 
 ## Why I should use the package & how it works?
